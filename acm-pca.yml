@@ -1,0 +1,56 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Cloudformation template to setup CA.
+
+Resources:
+  RootCA:
+    Type: 'AWS::ACMPCA::CertificateAuthority'
+    Properties:
+      Type: ROOT
+      KeyAlgorithm: RSA_2048
+      SigningAlgorithm: SHA256WITHRSA
+      Subject:
+        Country: ES
+        Organization: 'TestOrg'
+        OrganizationalUnit: 'TestOU'
+        DistinguishedNameQualifier: string
+        State: 'Madrid'
+        CommonName: 'MyTestCA'
+        SerialNumber: string
+        Locality: 'Madrid'
+        Title: string
+        Surname: string
+        GivenName: string
+        Initials: DG
+        Pseudonym: string
+        GenerationQualifier: DBG
+      RevocationConfiguration:
+        CrlConfiguration:
+          Enabled: false
+  
+  RootCACertificate:
+    Type: 'AWS::ACMPCA::Certificate'
+    Properties:
+      CertificateAuthorityArn: !Ref RootCA
+      CertificateSigningRequest: !GetAtt 
+        - RootCA
+        - CertificateSigningRequest
+      SigningAlgorithm: SHA256WITHRSA
+      TemplateArn: 'arn:aws:acm-pca:::template/RootCACertificate/V1'
+      Validity:
+        Type: DAYS
+        Value: 100
+    
+  RootCAActivation:
+    Type: 'AWS::ACMPCA::CertificateAuthorityActivation'
+    Properties:
+      CertificateAuthorityArn: !Ref RootCA
+      Certificate: !GetAtt 
+        - RootCACertificate
+        - Certificate
+      Status: ACTIVE
+
+Outputs:
+  CertificateChain:
+    Value: !GetAtt 
+      - RootCAActivation
+      - CompleteCertificateChain
